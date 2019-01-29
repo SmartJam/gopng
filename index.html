@@ -150,6 +150,7 @@
 					<div id="css_out">
 						<p>
 							<a class="btn btn-info" id="css_link" download="style.css" target="_blank" title="download css" href="###"><i class="icon-file icon-white"></i>Download</a>
+							<button class="btn btn-info" id="copy-css">Copy</button>
 						</p>
 						<h6>css code:</h6>
 						<pre id="target_css">
@@ -444,16 +445,44 @@
 				document.getElementById('img').appendChild(img);
 				resetCanvasSize(config.canvas_width, config.canvas_height);
 				refresh();
+				var headerFlag = '---header-end---', footFlag = '---foot-start---';
+				var tmpl = config.template;
+				var headerIdx = tmpl.indexOf(headerFlag), footIdx = tmpl.indexOf(footFlag);
+				var header = headerIdx < 0 ? "" : tmpl.substring(0, headerIdx);
+				var foot = footIdx < 0 ? "" : tmpl.substr(footIdx + footFlag.length);
+				var bodyFromIdx = headerIdx < 0 ? 0 : headerIdx + headerFlag.length;
+				var bodyToIdx = footIdx < 0 ? tmpl.length : footIdx;
+				var body = tmpl.substring(bodyFromIdx, bodyToIdx);
+				
+				var now = Math.floor(new Date().getTime() / 1000)
 				var css_pices = [];
 				imgObjects.map(function(o){
-					var css_pice = template(config.template, {w:o.w, h:o.h, x:o.x, y:o.y, absolute_path:config.absolute_path, name:o.name.split('.')[0], relative_path:config.relative_path});
+					var css_pice = template(body, {w:o.w, h:o.h, x:o.x, y:o.y, absolute_path:config.absolute_path, name:o.name.split('.')[0], relative_path:config.relative_path});
 					css_pices.push(css_pice);
 				});
+				header = header.replace("<%=time%>", now.toString());				
+				css_pices.unshift(header);
+				css_pices.push(foot);
 				var css_text = css_pices.join('').split('[enter]').join('\n')
 				getEl('css_link').href = 'data:text/css;base64,' + encodeBase64(css_text);
 				getEl('target_css').innerHTML = XssDefender(css_text);
 				getEl('css_link').style.display = 'inline';
+				
+				
+				getEl('copy-css').onclick = function() {				
+					var el = document.createElement('textarea');
+					el.value = css_text;
+					el.setAttribute('readonly', '');
+					el.style.position = 'absolute';
+					el.style.left = '-9999px';
+					document.body.appendChild(el);
+					el.select();
+					document.execCommand('copy');
+					document.body.removeChild(el);
+				}
+				
 			}
+						
 			var XssDefender = function(s) {
 				s = s.replace(/&/g,"&amp;").replace(/>/g,"&gt;").replace(/</g,"&lt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 				return s;
@@ -1224,10 +1253,11 @@
 			var template = function tmpl(str, data){
 				// Figure out if we're getting a template, or if we need to
 				// load the template - and be sure to cache the result.
-				var fn = !/\W/.test(str) ?
-				cache[str] = cache[str] ||
-				tmpl(document.getElementById(str).innerHTML) :
+				//var fn = !/\W/.test(str) ?
+				//cache[str] = cache[str] ||
+				//tmpl(document.getElementById(str).innerHTML) :
 
+				var fn = 
 				// Generate a reusable function that will serve as a template
 				// generator (and which will be cached).
 				new Function("obj",
